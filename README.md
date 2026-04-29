@@ -20,6 +20,4 @@ This proof-of-concept requires Python 3.8+ and `numpy`.
 pip install -r requirements.txt
 Run the 4608-bit bandwidth bandwidth test ($n=16$):Bashpython -m examples.run_4608_bit_test
 Run the DAV structural hardness unit tests:Bashpytest tests/
-Note: This repository is intended for academic peer-review and structural validation. It is not optimized for constant-time execution against side-channel attacks and should not be used in production environments.
----
 
