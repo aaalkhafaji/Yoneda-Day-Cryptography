@@ -1,0 +1,5 @@
+The minimal dependencies needed to run the matrix logic and the tests.
+
+```text
+numpy>=1.21.0
+pytest>=7.0.0
