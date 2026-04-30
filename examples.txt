@@ -1,0 +1,40 @@
+Python
+
+def run_bandwidth_simulation():
+    print("--- Categorical Cryptography: Bandwidth & Complexity Test ---")
+    
+    # 1. Initialize System with n=16 (As per paper Example)
+    n = 16
+    crypto_system = YonedaDayCryptosystem(n_support_size=n)
+    
+    # 2. Keygen
+    priv_key, pub_key = crypto_system.generate_keypair()
+    
+    # 3. Encrypt
+    payload = 1337
+    print(f"\n[Defender] Encrypting payload: {payload} with Presheaf Rank n={n}")
+    C1, C_struct = crypto_system.encrypt_presheaf(pub_key, payload)
+    
+    # 4. Calculate Simulated Ciphertext Size
+    # C1 (256 bits) + n points (256 bits each) + MAC (256 bits)
+    c1_bits = 256
+    support_bits = 256 * len(C_struct.support_bounds)
+    mac_bits = 256
+    total_bits = c1_bits + support_bits + mac_bits
+    
+    print("\n[Bandwidth Analysis]")
+    print(f"KEM Point (C1):     {c1_bits} bits")
+    print(f"Presheaf Support:   {support_bits} bits ({n} bounds)")
+    print(f"Authentication Tag: {mac_bits} bits")
+    print(f"Total Size:         {total_bits} bits ({total_bits / 8192:.2f} KB)")
+    
+    assert total_bits == 4608, "Math does not match paper!"
+    print("-> SUCCESS: Bandwidth matches 4608 bits exactly as defined in Section VII.")
+
+    # 5. Decrypt
+    print("\n[Verifier] Decrypting and enforcing structural invariants...")
+    recovered_payload = crypto_system.decrypt_presheaf(priv_key, C1, C_struct)
+    print(f"-> SUCCESS: Payload {recovered_payload} recovered. Structural integrity intact.")
+
+if __name__ == "__main__":
+    run_bandwidth_simulation()

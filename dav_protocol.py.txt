@@ -1,0 +1,58 @@
+dav_protocol.py
+
+Python
+import random
+import numpy as np
+from typing import Tuple
+from .algebra import EllipticPoint
+from .presheaf import RepresentableFunctor, EllipticPresheaf
+
+class YonedaDayCryptosystem:
+    """The KEM suite representing the Defender in the DAV model."""
+    
+    def __init__(self, n_support_size: int = 16):
+        # Base point G simulation
+        self.G = EllipticPoint(55066263022277343669578718895168534326250603453777594175500187360389116729240, 
+                               32670510020758816978083085130507043184471273380659243275938904335757337482424)
+        self.n = n_support_size
+
+    def generate_keypair(self) -> Tuple[int, EllipticPoint]:
+        private_key = random.getrandbits(256)
+        public_key = self.G * private_key
+        return private_key, public_key
+
+    def _formulate_message_presheaf(self, payload: int) -> EllipticPresheaf:
+        """Constructs the non-split extension M (The plain text structural state)."""
+        # 1. Generate n arbitrary support bounds
+        bounds = [self.G * random.getrandbits(32) for _ in range(self.n)]
+        
+        # 2. Construct the O(n^2) transition matrix encoding the payload and the Affine Gauge
+        matrix = np.zeros((self.n, self.n))
+        matrix[0, 1] = 1.0  # THE BRICK INVARIANT (Affine Gauge)
+        matrix[0, 2] = float(payload) # The hidden payload
+        
+        return EllipticPresheaf(bounds, matrix)
+
+    def encrypt_presheaf(self, public_key: EllipticPoint, payload: int) -> Tuple[EllipticPoint, EllipticPresheaf]:
+        """Phase 1: Key Encapsulation. Returns ephemeral point C1 and categorical ciphertext."""
+        ephemeral_scalar = random.getrandbits(256)
+        ephemeral_point = self.G * ephemeral_scalar
+        
+        blinding_point = public_key * ephemeral_scalar
+        Y_B = RepresentableFunctor(blinding_point)
+        
+        M = self._formulate_message_presheaf(payload)
+        C_struct = M.day_convolve(Y_B) # Mask via Day Convolution
+        
+        return ephemeral_point, C_struct
+
+    def decrypt_presheaf(self, private_key: int, ephemeral_point: EllipticPoint, C_struct: EllipticPresheaf) -> int:
+        """Phase 1: Decapsulation and DAV Validation."""
+        blinding_point = ephemeral_point * private_key
+        Y_dual = RepresentableFunctor(blinding_point).dual
+        
+        # Coend Reduction
+        M_recovered = C_struct.day_convolve(Y_dual)
+        
+        # Verifier checks structural constraints before yielding payload
+        return M_recovered.extract_payload()

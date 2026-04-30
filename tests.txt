@@ -1,0 +1,35 @@
+tests
+
+Python
+import pytest
+from src import YonedaDayCryptosystem
+
+def test_dav_attacker_interdiction():
+    """
+    Simulates an attacker attempting to malleate the categorical ciphertext.
+    Proves that the DAV Verifier catches the tampering via the brick invariant.
+    """
+    crypto_system = YonedaDayCryptosystem(n_support_size=4)
+    priv_key, pub_key = crypto_system.generate_keypair()
+    
+    # Defender encrypts a valid message
+    C1, C_struct = crypto_system.encrypt_presheaf(pub_key, payload=999)
+    
+    # ATTACKER PHASE: Intercepts C_struct and attempts to alter the internal transition matrix
+    # The attacker changes the affine gauge (index [0,1]) to a malicious value
+    malicious_C_struct = C_struct
+    malicious_C_struct.transition_matrix[0, 1] = 0.5 
+    
+    # VERIFIER PHASE: The verifier should reject this mathematically
+    with pytest.raises(ValueError, match="DAV Verifier Alert: Structural validation failed!"):
+        crypto_system.decrypt_presheaf(priv_key, C1, malicious_C_struct)
+        
+def test_valid_decryption():
+    """Ensures a normal decryption passes the verifier without error."""
+    crypto_system = YonedaDayCryptosystem(n_support_size=4)
+    priv_key, pub_key = crypto_system.generate_keypair()
+    
+    C1, C_struct = crypto_system.encrypt_presheaf(pub_key, payload=42)
+    recovered = crypto_system.decrypt_presheaf(priv_key, C1, C_struct)
+    
+    assert recovered == 42

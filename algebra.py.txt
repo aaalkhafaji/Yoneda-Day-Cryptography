@@ -1,0 +1,33 @@
+algebra.py
+
+Python
+from dataclasses import dataclass
+
+@dataclass
+class EllipticPoint:
+    """
+    Simulates a geometric object P in E(F_p).
+    In a production setting, this wraps a library like pycryptodome or tinyec.
+    """
+    x: int
+    y: int
+    
+    def __add__(self, other: 'EllipticPoint') -> 'EllipticPoint':
+        """Simulates geometric chord-and-tangent addition."""
+        # For simulation, we simply add coordinates modulo a large prime
+        p = 2**256 - 2**32 - 977 # secp256k1 prime
+        return EllipticPoint((self.x + other.x) % p, (self.y + other.y) % p)
+        
+    def __neg__(self) -> 'EllipticPoint':
+        """Geometric reflection representing the dual V_{-P}."""
+        p = 2**256 - 2**32 - 977
+        return EllipticPoint(self.x, (-self.y) % p)
+
+    def __mul__(self, scalar: int) -> 'EllipticPoint':
+        """Simulates classical scalar multiplication (e.g., kG)."""
+        p = 2**256 - 2**32 - 977
+        return EllipticPoint((self.x * scalar) % p, (self.y * scalar) % p)
+        
+    def __str__(self):
+        return f"Point({hex(self.x)[:10]}..., {hex(self.y)[:10]}...)"
+
